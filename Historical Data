@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health & Wellness - Historical Data Integration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        .dashboard-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: #1f2937;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .filter-label {
+            font-size: 0.75rem;
+            color: #d1d5db;
+        }
+        
+        .filter-select {
+            background: #374151;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 2rem;
+        }
+        
+        .instruction-box {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .instruction-text {
+            font-size: 0.9rem;
+            color: #1e40af;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .status-good {
+            color: #10b981;
+        }
+        
+        .status-warning {
+            color: #f59e0b;
+        }
+        
+        .status-danger {
+            color: #ef4444;
+        }
+        
+        .drill-down-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+        
+        .supporting-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .supporting-metric {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .supporting-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+        
+        .supporting-label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .chart-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #374151;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: #e8f4f8;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        
+        .gauge-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            background: #e8f4f8;
+            border-radius: 4px;
+            padding: 2rem;
+        }
+        
+        .gauge-wrapper {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 1rem;
+        }
+        
+        .gauge-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .gauge-mental {
+            background: conic-gradient(
+                from -90deg,
+                #667eea 0deg,
+                #667eea 298deg,
+                #e5e7eb 298deg,
+                #e5e7eb 360deg
+            );
+        }
+        
+        .gauge-inner {
+            width: 140px;
+            height: 140px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .gauge-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+        
+        .gauge-mental .gauge-value {
+            color: #667eea;
+        }
+        
+        .gauge-text {
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.25rem;
+        }
+        
+        .gauge-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            text-align: center;
+            max-width: 200px;
+        }
+        
+        .feedback-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+        }
+        
+        .feedback-item {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            font-style: italic;
+        }
+        
+        /* Historical Data Styles */
+        .historical-toggle {
+            margin: 2rem 0 0 0;
+            width: 100%;
+        }
+        
+        .historical-button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .historical-button:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .historical-section {
+            background: #f9fafb;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            display: none;
+            transition: all 0.3s ease;
+        }
+        
+        .historical-section.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(10px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+        
+        .historical-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .historical-note {
+            font-style: italic;
+            color: #9ca3af;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 4px;
+            border-left: 4px solid #fbbf24;
+        }
+        
+        .historical-filter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .historical-filter-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #6b7280;
+            min-width: 60px;
+        }
+        
+        .historical-filter-select {
+            background: white;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            min-width: 150px;
+        }
+        
+        .historical-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .historical-table th {
+            background: #f3f4f6;
+            color: #6b7280;
+            font-weight: 500;
+            padding: 0.75rem;
+            text-align: left;
+            font-size: 0.85rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .historical-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+        
+        .historical-table tbody tr:hover {
+            background: #f9fafb;
+        }
+        
+        .historical-table .cohort-name {
+            font-weight: 500;
+            color: #4b5563;
+        }
+        
+        .historical-table .percentage {
+            font-weight: 500;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="header">
+            <h1>Mental Health & Wellness - Historical Data Integration</h1>
+            <div class="header-controls">
+                <div class="filter-group">
+                    <div class="filter-label">Program Period</div>
+                    <select class="filter-select" id="programPeriodFilter" onchange="updateCurrentData()">
+                        <option>Summer 2025</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <div class="filter-label">Age Group</div>
+                    <select class="filter-select" id="ageGroupFilter" onchange="updateCurrentData()">
+                        <option>All Ages</option>
+                        <option>11-13</option>
+                        <option>14-17</option>
+                        <option>18-24</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <div class="filter-label">School</div>
+                    <select class="filter-select" id="schoolFilter" onchange="updateCurrentData()">
+                        <option value="all">All Schools</option>
+                        <option value="ncs">NCS Campus</option>
+                        <option value="mastery">Mastery</option>
+                        <option value="allen">Allen</option>
+                        <option value="amy">Amy NW</option>
+                    </select>
+                </div>
+                <span style="font-size: 0.85rem; color: #d1d5db;">Updated: May 28, 2025</span>
+            </div>
+        </header>
+        
+        <main class="content">
+            <div class="instruction-box">
+                <span>💡</span>
+                <span class="instruction-text">Click any of the KPIs below to view supporting metrics</span>
+            </div>
+            
+            <div class="metrics-grid">
+                <div class="metric-card" onclick="toggleSupportingMetrics('trauma')">
+                    <div class="metric-value status-good" id="traumaValue">92%</div>
+                    <div class="metric-label">Reported increased trauma awareness</div>
+                </div>
+                <div class="metric-card" onclick="toggleSupportingMetrics('safety')">
+                    <div class="metric-value status-good" id="safetyValue">81%</div>
+                    <div class="metric-label">Reported increased personal & digital safety knowledge</div>
+                </div>
+                <div class="metric-card" onclick="toggleSupportingMetrics('esteem')">
+                    <div class="metric-value status-warning" id="esteemValue">73%</div>
+                    <div class="metric-label">Reported increased self-esteem & self-awareness</div>
+                </div>
+                <div class="metric-card" onclick="toggleSupportingMetrics('conflict')">
+                    <div class="metric-value status-good" id="conflictValue">85%</div>
+                    <div class="metric-label">Reported increased conflict resolution skills & mindset</div>
+                </div>
+            </div>
+            
+            <!-- Supporting Metrics Sections -->
+            <div class="drill-down-section" id="trauma-details">
+                <div class="chart-title">Trauma Awareness - Supporting Metrics</div>
+                <div class="supporting-metrics">
+                    <div class="supporting-metric">
+                        <div class="supporting-value">89%</div>
+                        <div class="supporting-label">Reported increased knowledge of trauma</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">87%</div>
+                        <div class="supporting-label">Reported increased knowledge of trauma symptoms</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">94%</div>
+                        <div class="supporting-label">Reported increased knowledge of trauma causes</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">91%</div>
+                        <div class="supporting-label">Can identify trauma-informed response to peer in distress</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="drill-down-section" id="safety-details">
+                <div class="chart-title">Personal & Digital Safety Knowledge - Supporting Metrics</div>
+                <div class="supporting-metrics">
+                    <div class="supporting-metric">
+                        <div class="supporting-value">84%</div>
+                        <div class="supporting-label">Understand how to respond when feeling unsafe in community</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">78%</div>
+                        <div class="supporting-label">Reported increased feelings of safety on SEPTA</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">82%</div>
+                        <div class="supporting-label">Reported increased confidence managing privacy settings</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">85%</div>
+                        <div class="supporting-label">Understand what a digital footprint is</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">79%</div>
+                        <div class="supporting-label">Reported mindset shift in sharing videos of violent incidents</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="drill-down-section" id="esteem-details">
+                <div class="chart-title">Self-Esteem & Self-Awareness - Supporting Metrics</div>
+                <div class="supporting-metrics">
+                    <div class="supporting-metric" style="border-left-color: #f59e0b;">
+                        <div class="supporting-value">71%</div>
+                        <div class="supporting-label">Expressed increased confidence and self-worth (Self-Esteem)</div>
+                    </div>
+                    <div class="supporting-metric" style="border-left-color: #f59e0b;">
+                        <div class="supporting-value">75%</div>
+                        <div class="supporting-label">Reported increased belief in ability to achieve goals (Self-Esteem)</div>
+                    </div>
+                    <div class="supporting-metric" style="border-left-color: #10b981;">
+                        <div class="supporting-value">78%</div>
+                        <div class="supporting-label">Reported increased understanding of strengths (Self-Awareness)</div>
+                    </div>
+                    <div class="supporting-metric" style="border-left-color: #10b981;">
+                        <div class="supporting-value">82%</div>
+                        <div class="supporting-label">Reported increased understanding of areas for improvement (Self-Awareness)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="drill-down-section" id="conflict-details">
+                <div class="chart-title">Conflict Resolution Skills & Mindset - Supporting Metrics</div>
+                <div class="supporting-metrics">
+                    <div class="supporting-metric">
+                        <div class="supporting-value">88%</div>
+                        <div class="supporting-label">Demonstrated positive mindset shift around conflict</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">83%</div>
+                        <div class="supporting-label">Reported increased confidence in de-escalating arguments</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">86%</div>
+                        <div class="supporting-label">Understand importance of considering others' feelings</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">84%</div>
+                        <div class="supporting-label">Understand how words and actions impact arguments</div>
+                    </div>
+                    <div class="supporting-metric">
+                        <div class="supporting-value">79%</div>
+                        <div class="supporting-label">Utilized conflict resolution technique within timeframe</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="charts-container">
+                <div class="chart-card">
+                    <div class="chart-title">Mental Health Program Impact Score</div>
+                    <div class="gauge-container">
+                        <div class="gauge-wrapper">
+                            <div class="gauge-circle gauge-mental">
+                                <div class="gauge-inner">
+                                    <div class="gauge-value" id="gaugeValue">83%</div>
+                                    <div class="gauge-text">IMPACT</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gauge-label">Combined score across all mental health metrics</div>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Mental Health Outcomes - Before vs After</div>
+                    <div class="chart-container">
+                        <canvas id="mentalHealthChart" width="400" height="280"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="feedback-section">
+                <div class="chart-title">Participant Insights - "How would you define trauma?"</div>
+                <div class="feedback-item">"I learned that trauma isn't just big events - it can be small things that build up too."</div>
+                <div class="feedback-item">"Now I understand why I react certain ways and I have tools to help myself."</div>
+                <div class="feedback-item">"The program helped me realize trauma affects everyone differently."</div>
+            </div>
+            
+            <!-- Historical Data Toggle Button - At Very Bottom -->
+            <div class="historical-toggle">
+                <button class="historical-button" onclick="toggleHistorical()">
+                    📊 <span id="toggleText">Show Historical Data</span>
+                </button>
+            </div>
+            
+            <!-- Historical Data Section -->
+            <div class="historical-section" id="historicalData">
+                <div class="historical-header">
+                    📈 Historical Cohort Performance (2024 Methodology)
+                </div>
+                <div class="historical-note">
+                    ⚠️ Note: Historical data uses previous methodology and is not directly comparable to current results
+                </div>
+                
+                <!-- Historical Data School Filter -->
+                <div class="historical-filter">
+                    <label class="historical-filter-label">School:</label>
+                    <select class="historical-filter-select" id="historicalSchoolFilter" onchange="updateHistoricalData()">
+                        <option value="all">All Schools</option>
+                        <option value="ncs">NCS Campus</option>
+                        <option value="mastery">Mastery</option>
+                        <option value="allen">Allen</option>
+                        <option value="amy">Amy NW</option>
+                    </select>
+                </div>
+                
+                <table class="historical-table">
+                    <thead>
+                        <tr>
+                            <th>Cohort</th>
+                            <th>Trauma Awareness</th>
+                            <th>Safety Knowledge</th>
+                            <th>Self-Esteem</th>
+                            <th>Conflict Resolution</th>
+                            <th>Overall Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historicalTableBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        let historicalVisible = false;
+        let currentSchool = 'all';
+        let historicalSchool = 'all';
+        
+        // Sample data for different schools
+        const schoolData = {
+            all: {
+                trauma: '92%', safety: '81%', esteem: '73%', conflict: '85%', gauge: '83%',
+                historical: [
+                    {cohort: 'Spring 2024', trauma: 86, safety: 74, esteem: 68, conflict: 82, overall: 78},
+                    {cohort: 'Summer 2024', trauma: 88, safety: 75, esteem: 69, conflict: 83, overall: 79},
+                    {cohort: 'Winter 2025', trauma: 85, safety: 78, esteem: 71, conflict: 84, overall: 80},
+                    {cohort: 'Spring 2025', trauma: 90, safety: 80, esteem: 74, conflict: 87, overall: 83},
+                    {cohort: 'Summer 2025', trauma: 91, safety: 82, esteem: 76, conflict: 88, overall: 84}
+                ]
+            },
+            ncs: {
+                trauma: '94%', safety: '83%', esteem: '75%', conflict: '87%', gauge: '85%',
+                historical: [
+                    {cohort: 'Spring 2024', trauma: 88, safety: 76, esteem: 70, conflict: 84, overall: 80},
+                    {cohort: 'Summer 2024', trauma: 90, safety: 77, esteem: 71, conflict: 85, overall: 81},
+                    {cohort: 'Winter 2025', trauma: 87, safety: 80, esteem: 73, conflict: 86, overall: 82},
+                    {cohort: 'Spring 2025', trauma: 92, safety: 82, esteem: 76, conflict: 89, overall: 85},
+                    {cohort: 'Summer 2025', trauma: 93, safety: 84, esteem: 78, conflict: 90, overall: 86}
+                ]
+            },
+            mastery: {
+                trauma: '90%', safety: '79%', esteem: '71%', conflict: '83%', gauge: '81%',
+                historical: [
+                    {cohort: 'Spring 2024', trauma: 84, safety: 72, esteem: 66, conflict: 80, overall: 76},
+                    {cohort: 'Summer 2024', trauma: 86, safety: 73, esteem: 67, conflict: 81, overall: 77},
+                    {cohort: 'Winter 2025', trauma: 83, safety: 76, esteem: 69, conflict: 82, overall: 78},
+                    {cohort: 'Spring 2025', trauma: 88, safety: 78, esteem: 72, conflict: 85, overall: 81},
+                    {cohort: 'Summer 2025', trauma: 89, safety: 80, esteem: 74, conflict: 86, overall: 82}
+                ]
+            },
+            allen: {
+                trauma: '91%', safety: '80%', esteem: '72%', conflict: '84%', gauge: '82%',
+                historical: [
+                    {cohort: 'Spring 2024', trauma: 85, safety: 73, esteem: 67, conflict: 81, overall: 77},
+                    {cohort: 'Summer 2024', trauma: 87, safety: 74, esteem: 68, conflict: 82, overall: 78},
+                    {cohort: 'Winter 2025', trauma: 84, safety: 77, esteem: 70, conflict: 83, overall: 79},
+                    {cohort: 'Spring 2025', trauma: 89, safety: 79, esteem: 73, conflict: 86, overall: 82},
+                    {cohort: 'Summer 2025', trauma: 90, safety: 81, esteem: 75, conflict: 87, overall: 83}
+                ]
+            },
+            amy: {
+                trauma: '93%', safety: '82%', esteem: '74%', conflict: '86%', gauge: '84%',
+                historical: [
+                    {cohort: 'Spring 2024', trauma: 87, safety: 75, esteem: 69, conflict: 83, overall: 79},
+                    {cohort: 'Summer 2024', trauma: 89, safety: 76, esteem: 70, conflict: 84, overall: 80},
+                    {cohort: 'Winter 2025', trauma: 86, safety: 79, esteem: 72, conflict: 85, overall: 81},
+                    {cohort: 'Spring 2025', trauma: 91, safety: 81, esteem: 75, conflict: 88, overall: 84},
+                    {cohort: 'Summer 2025', trauma: 92, safety: 83, esteem: 77, conflict: 89, overall: 85}
+                ]
+            }
+        };
+        
+        // Initialize chart
+        let mentalHealthChart;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMentalHealthChart();
+            updateHistoricalTable();
+        });
+        
+        function initializeMentalHealthChart() {
+            const ctx = document.getElementById('mentalHealthChart').getContext('2d');
+            mentalHealthChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Trauma Awareness', 'Safety Knowledge', 'Self-Esteem & Awareness', 'Conflict Resolution'],
+                    datasets: [{
+                        label: 'Before Program',
+                        data: [45, 48, 52, 43],
+                        backgroundColor: '#e5e7eb',
+                        borderColor: '#9ca3af',
+                        borderWidth: 1
+                    }, {
+                        label: 'After Program',
+                        data: [92, 81, 73, 85],
+                        backgroundColor: '#667eea',
+                        borderColor: '#4f46e5',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function toggleHistorical() {
+            const historical = document.getElementById('historicalData');
+            const toggleText = document.getElementById('toggleText');
+            
+            if (historicalVisible) {
+                historical.classList.remove('show');
+                toggleText.textContent = 'Show Historical Data';
+                historicalVisible = false;
+            } else {
+                historical.classList.add('show');
+                toggleText.textContent = 'Hide Historical Data';
+                historicalVisible = true;
+            }
+        }
+        
+        function updateCurrentData() {
+            const schoolFilter = document.getElementById('schoolFilter');
+            currentSchool = schoolFilter.value;
+            
+            // Update current metrics (affected by all current filters)
+            const data = schoolData[currentSchool];
+            document.getElementById('traumaValue').textContent = data.trauma;
+            document.getElementById('safetyValue').textContent = data.safety;
+            document.getElementById('esteemValue').textContent = data.esteem;
+            document.getElementById('conflictValue').textContent = data.conflict;
+            document.getElementById('gaugeValue').textContent = data.gauge;
+            
+            // Update chart data
+            const chartData = [
+                parseInt(data.trauma),
+                parseInt(data.safety),
+                parseInt(data.esteem),
+                parseInt(data.conflict)
+            ];
+            mentalHealthChart.data.datasets[1].data = chartData;
+            mentalHealthChart.update();
+        }
+        
+        function updateHistoricalData() {
+            const historicalSchoolFilter = document.getElementById('historicalSchoolFilter');
+            historicalSchool = historicalSchoolFilter.value;
+            
+            // Update historical table (only affected by historical school filter)
+            updateHistoricalTable();
+        }
+        
+        function updateHistoricalTable() {
+            const tbody = document.getElementById('historicalTableBody');
+            const data = schoolData[historicalSchool].historical;
+            
+            tbody.innerHTML = data.map(row => `
+                <tr>
+                    <td class="cohort-name">${row.cohort}</td>
+                    <td class="percentage">${row.trauma}%</td>
+                    <td class="percentage">${row.safety}%</td>
+                    <td class="percentage">${row.esteem}%</td>
+                    <td class="percentage">${row.conflict}%</td>
+                    <td class="percentage">${row.overall}%</td>
+                </tr>
+            `).join('');
+        }
+        
+        function toggleSupportingMetrics(metricId) {
+            // Close all sections first
+            const allSections = document.querySelectorAll('.drill-down-section');
+            allSections.forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Get the target section
+            const detailsSection = document.getElementById(metricId + '-details');
+            
+            // Check if this section was already open (if so, keep it closed)
+            const wasOpen = detailsSection.getAttribute('data-open') === 'true';
+            
+            // Reset all data-open attributes
+            allSections.forEach(section => {
+                section.setAttribute('data-open', 'false');
+            });
+            
+            // If it wasn't open, open it
+            if (!wasOpen) {
+                detailsSection.style.display = 'block';
+                detailsSection.setAttribute('data-open', 'true');
+            }
+        }
+    </script>
+</body>
+</html>
